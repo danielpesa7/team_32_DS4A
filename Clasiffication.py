@@ -98,19 +98,31 @@ NY_one = list(NY_poly['Geometria'])
 NY_one = cascaded_union(NY_one)
 outside_points = list(fuera.index)
 
+#Shortest distance from Point to NY polygon
 distances = [Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(NY_one) for a in outside_points]
+distances_df = pd.DataFrame(distances).rename(columns={0:'Dist'})
+
+#Drop pickup points out of NY in the middle of the sea
+sea_points = list(pd.DataFrame(outside_points)[distances_df['Dist']>=0.003][0])
+yellow = yellow[0:100000].drop(sea_points)
+
+#Nta clasification for the outside nearest points
+close_enough = list(pd.DataFrame(outside_points)[distances_df['Dist']<0.003][0])
+close_nta = [int(pd.DataFrame([Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(nta) for nta in NY_poly['Geometria']]).idxmin()) for a in close_enough]
+
+#Nta clasification for the rest
+inside = fuera = yellow[['pickup_longitude','pickup_latitude']][0:100000][np.where(np.array(esta_NY)!=0, True, False)]
+
+esta_NY = [sum(NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])))!=0 for a in range(0,100000)]
+
+ 
+NY_poly.plot()
+dis = 0.003
+plt.scatter(yellow['pickup_longitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]],yellow['pickup_latitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]], color='red')
 
 NY_poly.plot()  
 plt.scatter(yellow['pickup_longitude'][same_distance],yellow['pickup_latitude'][same_distance], color='red')
 same_distance = list(pd.DataFrame(distances)[pd.DataFrame(distances).loc[:,0]==84.17368426440514].index)
     
-NY_poly.plot()
-dis = 0.005
-plt.scatter(yellow['pickup_longitude'][pd.DataFrame(outside_points)[distances_df[0]<dis][0]],yellow['pickup_latitude'][pd.DataFrame(outside_points)[distances_df[0]<dis][0]], color='red')
 
 
-close_enough = pd.DataFrame(outside_points)[distances_df[0]<dis]
-
-
-
-plt.hist(pd.DataFrame(distances)[pd.DataFrame(distances)<70 .index][0])
