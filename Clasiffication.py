@@ -4,6 +4,7 @@ import numpy as np
 import timeit
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
+from shapely.ops import cascaded_union
 import json
 # =============================================================================
 # Functions
@@ -89,3 +90,27 @@ print(end - start)
 fuera = yellow[['pickup_longitude','pickup_latitude']][0:100000][np.where(np.array(esta_NY)==0, True, False)]
 NY_poly.plot()
 plt.scatter(fuera['pickup_longitude'],fuera['pickup_latitude'], color='red')
+
+# =============================================================================
+# Distance 
+# =============================================================================
+NY_one = list(NY_poly['Geometria'])
+NY_one = cascaded_union(NY_one)
+outside_points = list(fuera.index)
+
+distances = [Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(NY_one) for a in outside_points]
+
+NY_poly.plot()  
+plt.scatter(yellow['pickup_longitude'][same_distance],yellow['pickup_latitude'][same_distance], color='red')
+same_distance = list(pd.DataFrame(distances)[pd.DataFrame(distances).loc[:,0]==84.17368426440514].index)
+    
+NY_poly.plot()
+dis = 0.005
+plt.scatter(yellow['pickup_longitude'][pd.DataFrame(outside_points)[distances_df[0]<dis][0]],yellow['pickup_latitude'][pd.DataFrame(outside_points)[distances_df[0]<dis][0]], color='red')
+
+
+close_enough = pd.DataFrame(outside_points)[distances_df[0]<dis]
+
+
+
+plt.hist(pd.DataFrame(distances)[pd.DataFrame(distances)<70 .index][0])
