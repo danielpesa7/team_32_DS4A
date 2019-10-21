@@ -5,6 +5,7 @@ import timeit
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from shapely.ops import cascaded_union
+import shapefile
 import json
 # =============================================================================
 # Functions
@@ -18,7 +19,7 @@ def inside(lista):
     except:
         return 'next_level'
 
-def poly_info(poly, temp, geom, conte, sub_index=''):
+def poly_info(poly, temp, conte, sub_index=''):
     sub = '_'+str(sub_index)
     temp = temp.append(pd.DataFrame([list(item) for sublist in inside(poly) for item in sublist]))
     temp['Cod']=name+'_'+str(sub)
@@ -45,6 +46,9 @@ uber_2014 = pd.read_csv(path+'\\uber_trips_2014.csv')
 # =============================================================================
 # NY map
 # =============================================================================
+path_shp = 'C:\\Users\HP\Documents\AngelicaMora\MinTIC\Datathon\\Shape_reproject'
+NY_nta = shapefile.Reader(path_shp+'\\Nta.shp')
+
 conte = []
 boroname = []
 aux = pd.DataFrame()
@@ -60,18 +64,18 @@ for i in range(0,len(NY_nta.shapeRecords())):
             if inside(pol)=='next_level':
                 for island in pol:                    
                     if inside(island)=='next_level':
-                        poly_info(island[0], temp, geom, conte, sub)
+                        poly_info(island[0], temp, conte, sub)
                     else:
-                        poly_info(island, temp, geom, conte, sub)
+                        poly_info(island, temp, conte, sub)
                     sub=sub+1
             else:
-                poly_info(pol, temp, geom, conte, sub_1)                
+                poly_info(pol, temp, conte, sub_1)                
             sub_1=sub_1+1
     else:
         if inside(coords)=='next_level':
-            poly_info(coords[0],temp, geom, conte)
+            poly_info(coords[0],temp, conte)
         else:
-            poly_info(coords, temp, geom, conte)
+            poly_info(coords, temp, conte)
     aux = aux.append(temp)
 
 NY_poly = gpd.GeoDataFrame(columns=['Nombre','Geometria'], data=conte, geometry='Geometria')
@@ -82,10 +86,8 @@ plt.scatter(yellow['pickup_longitude'][2],yellow['pickup_latitude'][2], color='r
 # =============================================================================
 # Finding outside pick up points
 # =============================================================================
-start = timeit.timeit()
+yellow['NTA'] = np.nan
 esta_NY = [sum(NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])))!=0 for a in range(0,100000)]
-end = timeit.timeit()
-print(end - start)
 
 fuera = yellow[['pickup_longitude','pickup_latitude']][0:100000][np.where(np.array(esta_NY)==0, True, False)]
 NY_poly.plot()
@@ -106,23 +108,31 @@ distances_df = pd.DataFrame(distances).rename(columns={0:'Dist'})
 sea_points = list(pd.DataFrame(outside_points)[distances_df['Dist']>=0.003][0])
 yellow = yellow[0:100000].drop(sea_points)
 
+
 #Nta clasification for the outside nearest points
 close_enough = list(pd.DataFrame(outside_points)[distances_df['Dist']<0.003][0])
 close_nta = [int(pd.DataFrame([Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(nta) for nta in NY_poly['Geometria']]).idxmin()) for a in close_enough]
 
-#Nta clasification for the rest
-inside = fuera = yellow[['pickup_longitude','pickup_latitude']][0:100000][np.where(np.array(esta_NY)!=0, True, False)]
+yellow.loc[close_enough,'NTA'] = [a[:4] for a in list(NY_poly.loc[close_nta,'Nombre'])]
 
-esta_NY = [sum(NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])))!=0 for a in range(0,100000)]
+#Nta clasification for the remaining
+a=0
+nta_assign = []
+for a in list(yellow.index):
+    nta_assign.append(list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4])
 
+nta_assign = [list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] for a in list(yellow.index)]
+
+list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4]
  
 NY_poly.plot()
 dis = 0.003
 plt.scatter(yellow['pickup_longitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]],yellow['pickup_latitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]], color='red')
 
 NY_poly.plot()  
+plt.scatter(yellow['pickup_longitude'][45],yellow['pickup_latitude'][45], color='red')
 plt.scatter(yellow['pickup_longitude'][same_distance],yellow['pickup_latitude'][same_distance], color='red')
 same_distance = list(pd.DataFrame(distances)[pd.DataFrame(distances).loc[:,0]==84.17368426440514].index)
     
-
+yellow.loc[45,:]
 
