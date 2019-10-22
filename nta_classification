@@ -1,0 +1,190 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import geopandas as gpd\n",
+    "import numpy as np\n",
+    "import timeit\n",
+    "import matplotlib.pyplot as plt\n",
+    "from shapely.geometry import Polygon, Point\n",
+    "from shapely.ops import cascaded_union\n",
+    "import shapefile\n",
+    "import json"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# Functions\n",
+    "# =============================================================================\n",
+    "def inside(lista):\n",
+    "    try:\n",
+    "        if len(lista[0])==2 and str(lista[0][0])[:3] in set(['-73', '-74']):\n",
+    "            return [lista]\n",
+    "        else:\n",
+    "            return 'next_level'            \n",
+    "    except:\n",
+    "        return 'next_level'\n",
+    "\n",
+    "def poly_info(poly, temp, conte, sub_index=''):\n",
+    "    sub = '_'+str(sub_index)\n",
+    "    temp = temp.append(pd.DataFrame([list(item) for sublist in inside(poly) for item in sublist]))\n",
+    "    temp['Cod']=name+'_'+str(sub)\n",
+    "    temp['Bor']=boro\n",
+    "    geom = Polygon(zip(temp.loc[:,0],temp.loc[:,1]))\n",
+    "    conte.append([name+str(sub),geom])\n",
+    "    boroname.append(boro)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# Data\n",
+    "# =============================================================================\n",
+    "path = \"C:\\\\Users\\HP\\Desktop\\DS4A_workspace\\Semana 1\\Dataset\\Dataset\\\\\"\n",
+    "yellow = pd.read_csv(path+'\\\\yellow_trips_new.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# NY map\n",
+    "# =============================================================================\n",
+    "path_shp = 'C:\\\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\\\Neighborhood Tabulation Areas'\n",
+    "NY_nta = shapefile.Reader(path_shp+'\\\\ny.shp')\n",
+    "\n",
+    "conte = []\n",
+    "boroname = []\n",
+    "aux = pd.DataFrame()\n",
+    "for i in range(0,len(NY_nta.shapeRecords())):\n",
+    "    name = NY_nta.shapeRecords()[i].__geo_interface__['properties']['ntacode']\n",
+    "    boro = NY_nta.shapeRecords()[i].__geo_interface__['properties']['boro_name']\n",
+    "    coords = NY_nta.shapeRecords()[i].__geo_interface__['geometry']['coordinates']\n",
+    "    temp = pd.DataFrame()\n",
+    "    sub_1 = 0\n",
+    "    sub=0\n",
+    "    if len(coords)>1:\n",
+    "        for pol in coords:            \n",
+    "            if inside(pol)=='next_level':\n",
+    "                for island in pol:                    \n",
+    "                    if inside(island)=='next_level':\n",
+    "                        poly_info(island[0], temp, conte, sub)\n",
+    "                    else:\n",
+    "                        poly_info(island, temp, conte, sub)\n",
+    "                    sub=sub+1\n",
+    "            else:\n",
+    "                poly_info(pol, temp, conte, sub_1)                \n",
+    "            sub_1=sub_1+1\n",
+    "    else:\n",
+    "        if inside(coords)=='next_level':\n",
+    "            poly_info(coords[0],temp, conte)\n",
+    "        else:\n",
+    "            poly_info(coords, temp, conte)\n",
+    "    aux = aux.append(temp)\n",
+    "\n",
+    "NY_poly = gpd.GeoDataFrame(columns=['Nombre','Geometria'], data=conte, geometry='Geometria')\n",
+    "NY_poly.plot()\n",
+    "plt.scatter(yellow['pickup_longitude'][:10],yellow['pickup_latitude'][:10], color='red')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# Finding outside pick up points\n",
+    "# =============================================================================\n",
+    "puntos = 100000\n",
+    "yellow['NTA'] = np.nan\n",
+    "esta_NY = [sum(NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])))!=0 for a in range(0,puntos)]\n",
+    "\n",
+    "fuera = yellow[['pickup_longitude','pickup_latitude']][:puntos][np.where(np.array(esta_NY)==0, True, False)]\n",
+    "NY_poly.plot()\n",
+    "plt.scatter(fuera['pickup_longitude'],fuera['pickup_latitude'], color='red')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# Distance \n",
+    "# =============================================================================\n",
+    "NY_one = list(NY_poly['Geometria'])\n",
+    "NY_one = cascaded_union(NY_one)\n",
+    "outside_points = list(fuera.index)\n",
+    "\n",
+    "#Shortest distance from Point to NY polygon\n",
+    "distances = [Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(NY_one) for a in outside_points]\n",
+    "distances_df = pd.DataFrame(distances).rename(columns={0:'Dist'})\n",
+    "\n",
+    "#Drop pickup points out of NY in the middle of the sea\n",
+    "sea_points = list(pd.DataFrame(outside_points)[distances_df['Dist']>=0.003][0])\n",
+    "yellow = yellow[0:puntos].drop(sea_points)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# =============================================================================\n",
+    "# Classification\n",
+    "# =============================================================================\n",
+    "\n",
+    "#Nta clasification for the outside nearest points\n",
+    "close_enough = list(pd.DataFrame(outside_points)[distances_df['Dist']<0.003][0])\n",
+    "close_nta = [int(pd.DataFrame([Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]).distance(nta) for nta in NY_poly['Geometria']]).idxmin()) for a in close_enough]\n",
+    "\n",
+    "yellow.loc[close_enough,'NTA'] = [a[:4] for a in list(NY_poly.loc[close_nta,'Nombre'])]\n",
+    "\n",
+    "#Nta clasification for the remaining\n",
+    "remaining = list(set(yellow.index)-set(close_enough))\n",
+    "yellow.loc[remaining,'NTA'] = [list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] for a in remaining]"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
