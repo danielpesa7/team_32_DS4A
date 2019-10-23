@@ -32,29 +32,21 @@ def poly_info(poly, temp, conte, sub_index=''):
 # =============================================================================
 path = "C:\\Users\HP\Desktop\DS4A_workspace\Semana 1\Dataset\Dataset\\"
 
-geografia = pd.read_csv(path+'geographic.csv')
-demogr = pd.read_csv(path+'\\demographics.csv')
-weather = pd.read_csv(path+'\\weather.csv')
-zones = pd.read_csv(path+'\\zones.csv')
-
-subway = pd.read_csv(path+'\\mta_trips.csv')
-green = pd.read_csv(path+'\\green_trips_new_2.csv')
 yellow = pd.read_csv(path+'\\yellow_trips_new.csv')
-uber_2015 = pd.read_csv(path+'\\uber_trips_2015.csv')
-uber_2014 = pd.read_csv(path+'\\uber_trips_2014.csv')
 
 # =============================================================================
 # NY map
 # =============================================================================
 path_shp = 'C:\\Users\HP\Documents\AngelicaMora\MinTIC\Datathon\\Shape_reproject'
-NY_nta = shapefile.Reader(path_shp+'\\Nta.shp')
+path_shp = 'C:\\Users\lenovo\Documents\Github_Personal\personal\Datathon\\Neighborhood Tabulation Areas'
+NY_nta = shapefile.Reader(path_shp+'\\ny.shp')
 
 conte = []
 boroname = []
 aux = pd.DataFrame()
 for i in range(0,len(NY_nta.shapeRecords())):
-    name = NY_nta.shapeRecords()[i].__geo_interface__['properties']['NTACode']
-    boro = NY_nta.shapeRecords()[i].__geo_interface__['properties']['BoroName']
+    name = NY_nta.shapeRecords()[i].__geo_interface__['properties']['ntacode']
+    boro = NY_nta.shapeRecords()[i].__geo_interface__['properties']['boro_name']
     coords = NY_nta.shapeRecords()[i].__geo_interface__['geometry']['coordinates']
     temp = pd.DataFrame()
     sub_1 = 0
@@ -108,6 +100,9 @@ distances_df = pd.DataFrame(distances).rename(columns={0:'Dist'})
 sea_points = list(pd.DataFrame(outside_points)[distances_df['Dist']>=0.003][0])
 yellow = yellow[0:100000].drop(sea_points)
 
+# =============================================================================
+# Classification
+# =============================================================================
 
 #Nta clasification for the outside nearest points
 close_enough = list(pd.DataFrame(outside_points)[distances_df['Dist']<0.003][0])
@@ -116,23 +111,8 @@ close_nta = [int(pd.DataFrame([Point(yellow['pickup_longitude'][a],yellow['picku
 yellow.loc[close_enough,'NTA'] = [a[:4] for a in list(NY_poly.loc[close_nta,'Nombre'])]
 
 #Nta clasification for the remaining
-a=0
-nta_assign = []
-for a in list(yellow.index):
-    nta_assign.append(list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4])
-
-nta_assign = [list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] for a in list(yellow.index)]
-
-list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4]
+remaining = list(set(yellow.index)-set(close_enough))
+yellow.loc[remaining,'NTA'] = [list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] for a in remaining]
  
-NY_poly.plot()
-dis = 0.003
-plt.scatter(yellow['pickup_longitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]],yellow['pickup_latitude'][pd.DataFrame(outside_points)[distances_df['Distancias']<dis][0]], color='red')
 
-NY_poly.plot()  
-plt.scatter(yellow['pickup_longitude'][45],yellow['pickup_latitude'][45], color='red')
-plt.scatter(yellow['pickup_longitude'][same_distance],yellow['pickup_latitude'][same_distance], color='red')
-same_distance = list(pd.DataFrame(distances)[pd.DataFrame(distances).loc[:,0]==84.17368426440514].index)
-    
-yellow.loc[45,:]
 
