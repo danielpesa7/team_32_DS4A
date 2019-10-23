@@ -81,7 +81,7 @@ NY_one = list(NY_poly['Geometria'])
 NY_one = cascaded_union(NY_one)
 yellow['NTA'] = np.nan
 inicio = 1000000
-fin = 2000000
+fin = 1100000
 esta_NY = [NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]) for a in range(inicio,fin)]
 
 fuera = yellow[['pickup_longitude','pickup_latitude']][inicio:fin][np.where(np.array(esta_NY)==0, True, False)]
@@ -124,15 +124,8 @@ a=1000000
 # =============================================================================
 # Todo en uno
 # =============================================================================
-esta_NY =[]
-for a in range(inicio,fin):
-    in_out = NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])
-    esta_NY.append(in_out)
-    if in_out:
-        yellow.loc[a,'NTA'] = list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4]
+fuera =[[a,(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre']).values.tolist()] for a in range(inicio,fin)]
         
-        
-esta_NY = [yellow.loc[a,'NTA'] = list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] if NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]) else a for a in range(inicio,fin)]
         
     
     
