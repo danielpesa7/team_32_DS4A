@@ -100,6 +100,4 @@ col_latitude = 'pickup_latitude'
 path_export = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv'
 assign(transport, col_latitude, col_longitude, 1000000,2000000,Ny_poly, path_export)
 
- 
-
 
