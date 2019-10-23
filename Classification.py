@@ -37,7 +37,7 @@ yellow = pd.read_csv(path+'\\yellow_trips_new.csv')
 # NY map
 # =============================================================================
 path_shp = 'C:\\Users\HP\Documents\AngelicaMora\MinTIC\Datathon\\Shape_reproject'
-path_shp = 'C:\\Users\lenovo\Documents\Github_Personal\personal\Datathon\\Neighborhood Tabulation Areas'
+path_shp = 'C:\\Users\\HP\\Documents\\GitHub\\team_32_DS4A_\\Ny'
 NY_nta = shapefile.Reader(path_shp+'\\ny.shp')
 
 conte = []
@@ -124,9 +124,19 @@ a=1000000
 # =============================================================================
 # Todo en uno
 # =============================================================================
+inicio = 1000000
+fin = 2000000
+
 fuera =[[a,(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre']).values.tolist()] for a in range(inicio,fin)]
-        
-        
-    
-    
-    
+out = [prueba[0][a] for a in range(len(prueba)) if not prueba[1][a]]
+inside_pol = [ ]
+
+a=5
+NTA = ['na']*len()
+NTA.insert(1000,4)
+
+type(yellow['NTA'])[prueba[0][a]].insert()
+yellow.columns
+
+puntos_afuera = []
+[puntos_afuera.append(prueba[0][a]) if not prueba[1][a] else yellow.loc[prueba[0][a],'NTA']=prueba[1][a][0][:4] for a in range(len(prueba)) ]
