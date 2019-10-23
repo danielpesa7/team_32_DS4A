@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from shapely.ops import cascaded_union
 import shapefile
-import json
 # =============================================================================
 # Functions
 # =============================================================================
@@ -31,7 +30,7 @@ def poly_info(poly, temp, conte, sub_index=''):
 # Data
 # =============================================================================
 path = "C:\\Users\HP\Desktop\DS4A_workspace\Semana 1\Dataset\Dataset\\"
-
+path = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\Dataset'
 yellow = pd.read_csv(path+'\\yellow_trips_new.csv')
 
 # =============================================================================
@@ -78,18 +77,20 @@ plt.scatter(yellow['pickup_longitude'][2],yellow['pickup_latitude'][2], color='r
 # =============================================================================
 # Finding outside pick up points
 # =============================================================================
+NY_one = list(NY_poly['Geometria'])
+NY_one = cascaded_union(NY_one)
 yellow['NTA'] = np.nan
-esta_NY = [sum(NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])))!=0 for a in range(0,100000)]
+inicio = 1000000
+fin = 2000000
+esta_NY = [NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]) for a in range(inicio,fin)]
 
-fuera = yellow[['pickup_longitude','pickup_latitude']][0:100000][np.where(np.array(esta_NY)==0, True, False)]
+fuera = yellow[['pickup_longitude','pickup_latitude']][inicio:fin][np.where(np.array(esta_NY)==0, True, False)]
 NY_poly.plot()
 plt.scatter(fuera['pickup_longitude'],fuera['pickup_latitude'], color='red')
 
 # =============================================================================
 # Distance 
 # =============================================================================
-NY_one = list(NY_poly['Geometria'])
-NY_one = cascaded_union(NY_one)
 outside_points = list(fuera.index)
 
 #Shortest distance from Point to NY polygon
@@ -98,7 +99,7 @@ distances_df = pd.DataFrame(distances).rename(columns={0:'Dist'})
 
 #Drop pickup points out of NY in the middle of the sea
 sea_points = list(pd.DataFrame(outside_points)[distances_df['Dist']>=0.003][0])
-yellow = yellow[0:100000].drop(sea_points)
+yellow = yellow[inicio:fin].drop(sea_points)
 
 # =============================================================================
 # Classification
@@ -113,6 +114,26 @@ yellow.loc[close_enough,'NTA'] = [a[:4] for a in list(NY_poly.loc[close_nta,'Nom
 #Nta clasification for the remaining
 remaining = list(set(yellow.index)-set(close_enough))
 yellow.loc[remaining,'NTA'] = [list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] for a in remaining]
+
+yellow.to_csv('C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv')
  
+a=1000000
+[1 if NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])) else 0 for a in (yellow.index)[:10]]
 
 
+# =============================================================================
+# Todo en uno
+# =============================================================================
+esta_NY =[]
+for a in range(inicio,fin):
+    in_out = NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a])
+    esta_NY.append(in_out)
+    if in_out:
+        yellow.loc[a,'NTA'] = list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4]
+        
+        
+esta_NY = [yellow.loc[a,'NTA'] = list(NY_poly[NY_poly.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]))]['Nombre'])[0][:4] if NY_one.contains(Point(yellow['pickup_longitude'][a],yellow['pickup_latitude'][a]) else a for a in range(inicio,fin)]
+        
+    
+    
+    
