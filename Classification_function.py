@@ -1,7 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import timeit
+from datetime import datetime
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from shapely.ops import cascaded_union
@@ -101,6 +101,9 @@ a = [0,1000000,2000000,3000000,4000000,5000000,6000000]
 b = [1000000,2000000,3000000,4000000,5000000,6000000,len(transport)]
 
 path_export = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv'
-assign(transport, col_latitude, col_longitude, a[1],b[1],Ny_poly, path_export)
 
+uno = datetime.now()
+assign(transport, col_latitude, col_longitude, a[1],b[1],Ny_poly, path_export)
+dos = datetime.now()
+dos-uno
 
