@@ -1,7 +1,7 @@
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import timeit
+from datetime import datetime
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from shapely.ops import cascaded_union
@@ -60,7 +60,7 @@ def assign(transport, col_latitude, col_longitude, a, b , poly, path_export):
     NY_one = cascaded_union(NY_one)
     
     transport['NTA'] = np.nan
-    esta_NY = [sum(poly.contains(Point(transport[col_longitude][a],transport[col_latitude][a])))!=0 for a in range(a,b)]
+    esta_NY = [Ny_poly.contains(Point(transport[col_longitude][a],transport[col_latitude][a])) for a in range(a,b)]
     
     fuera = transport[[col_longitude,col_latitude]][a:b][np.where(np.array(esta_NY)==0, True, False)]    
     outside_points = list(fuera.index)
@@ -83,7 +83,7 @@ def assign(transport, col_latitude, col_longitude, a, b , poly, path_export):
     remaining = list(set(transport.index)-set(close_enough))
     transport.loc[remaining,'NTA'] = [list(poly[poly.contains(Point(transport[col_longitude][a],transport[col_latitude][a]))]['Nombre'])[0][:4] for a in remaining]
     
-    transport.to_csv('C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv')
+    transport.to_csv(path_export)
     
 
 path_shp = 'C:\\Users\lenovo\Documents\Github_Personal\personal\Datathon\\Neighborhood Tabulation Areas'    
@@ -95,11 +95,15 @@ nombre_dataset = '\\yellow_trips_new.csv'
 transport = pd.read_csv(path_dataset+nombre_dataset)
 col_longitude = 'pickup_longitude'
 col_latitude = 'pickup_latitude'
-path_export = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow3.csv'
 
 
-assign(transport, col_latitude, col_longitude, 2000000,3000000,Ny_poly, path_export)
+a = [0,1000000,2000000,3000000,4000000,5000000,6000000]
+b = [1000000,2000000,3000000,4000000,5000000,6000000,len(transport)]
 
- 
+path_export = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv'
 
+uno = datetime.now()
+assign(transport, col_latitude, col_longitude, a[1],b[1],Ny_poly, path_export)
+dos = datetime.now()
+dos-uno
 
