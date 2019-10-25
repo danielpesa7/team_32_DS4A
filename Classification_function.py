@@ -60,7 +60,7 @@ def assign(transport, col_latitude, col_longitude, a, b , poly, path_export):
     NY_one = cascaded_union(NY_one)
     
     transport['NTA'] = np.nan
-    esta_NY = [NY_one.contains(Point(transport[col_longitude][a],transport[col_latitude][a])) for a in range(a,b)]
+    esta_NY = [Ny_poly.contains(Point(transport[col_longitude][a],transport[col_latitude][a])) for a in range(a,b)]
     
     fuera = transport[[col_longitude,col_latitude]][a:b][np.where(np.array(esta_NY)==0, True, False)]    
     outside_points = list(fuera.index)
@@ -97,7 +97,10 @@ col_longitude = 'pickup_longitude'
 col_latitude = 'pickup_latitude'
 
 
+a = [0,1000000,2000000,3000000,4000000,5000000,6000000]
+b = [1000000,2000000,3000000,4000000,5000000,6000000,len(transport)]
+
 path_export = 'C:\\Users\\lenovo\\Documents\\Github_Personal\\personal\\Datathon\\Dataset\Yellow2.csv'
-assign(transport, col_latitude, col_longitude, 1000000,2000000,Ny_poly, path_export)
+assign(transport, col_latitude, col_longitude, a[1],b[1],Ny_poly, path_export)
 
 
