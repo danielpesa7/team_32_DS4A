@@ -60,7 +60,7 @@ def assign(transport, col_latitude, col_longitude, a, b , poly, path_export):
     NY_one = cascaded_union(NY_one)
     
     transport['NTA'] = np.nan
-    esta_NY = [NY_one.contains(Point(transport[col_longitude][a],transport[col_latitude][a])) for a in range(a,b)]
+    esta_NY = [sum(Ny_poly.contains(Point(transport[col_longitude][a],transport[col_latitude][a])))!=0 for a in range(a,b)]
     
     fuera = transport[[col_longitude,col_latitude]][a:b][np.where(np.array(esta_NY)==0, True, False)]    
     outside_points = list(fuera.index)
